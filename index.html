@@ -1311,12 +1311,8 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (a >= 0.25) {
-          if (z > 2) {
-            a = a - 0.5;
-          } else {
-            a = a - 0.25;
-          }
+        if (a >= 0.25 && z > 0) {
+          a = a - 0.25;
         }
 
         dd = 0;
@@ -1358,7 +1354,7 @@
           await sleep(7000);
           i = lc;
         } else if (dd === 2) {
-          a = a + 1;
+          a = a + 0.5;
           if (a >= 3) {
             if (g > half_g) {
               c_div = c_div * 1.5;
