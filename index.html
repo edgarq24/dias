@@ -1326,6 +1326,12 @@
 
         if (dd === 1) {
           a = a + 0.5;
+          if (a >= 3) {
+            maxp = totalProfit;
+            c = (b - maxp) / 10;
+            g = 10;
+            a = 1;
+          }
           log("Waiting 7s (dd==1)…", "l-info");
           await sleep(7000);
           i = lc * 1;
