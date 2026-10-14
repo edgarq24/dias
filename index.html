@@ -1304,14 +1304,19 @@
           }
           maxp = maxp + c;
           g = g - 1;
-          a = 1.5;
+          a = 1;
+          z = 0;
         }
 
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (z > 0 && a > 0.2) {
-          a = a - 0.25;
+        if (a >= 0.25) {
+          if (z > 2) {
+            a = a - 0.5;
+          } else {
+            a = a - 0.25;
+          }
         }
 
         dd = 0;
