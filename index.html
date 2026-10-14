@@ -1298,8 +1298,8 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (z > 1 && a > 0) {
-          a = a - 0.5;
+        if (z > 0 && a > 0) {
+          a = a - 0.3;
         }
 
         dd = 0;
@@ -1336,7 +1336,7 @@
           await sleep(7000);
           i = lc * 1;
         } else if (dd === 2) {
-          a = a + 0.5;
+          a = a + 1;
           if (a >= 3) {
             maxp = totalProfit;
             c = (b - maxp) / 10;
