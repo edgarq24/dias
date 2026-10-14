@@ -173,6 +173,8 @@
       padding: 0;
       overflow: hidden;
       min-height: 560px;
+      max-height: 560px;
+      /* Added to constrain height for internal scrolling */
     }
 
     .tabs {
@@ -220,6 +222,8 @@
       flex-direction: column;
       flex: 1;
       height: 100%;
+      overflow: hidden;
+      /* Added to prevent page scroll */
     }
 
     .tab-content.active {
@@ -429,6 +433,8 @@
       height: 100%;
       padding: 12px;
       gap: 8px;
+      overflow: hidden;
+      /* Added to prevent page scroll */
     }
 
     .journal-actions {
@@ -438,7 +444,8 @@
 
     #log {
       flex: 1;
-      height: 480px;
+      height: 100%;
+      /* Changed from 480px to fill available space */
       overflow-y: auto;
       font-size: 12px;
       line-height: 1.5;
@@ -479,6 +486,12 @@
     .ov-sub {
       font-size: 11px;
       color: var(--muted);
+    }
+
+    /* Increased font size for the "b" value */
+    #ov-b {
+      font-size: 16px;
+      /* Increased from 11px */
     }
 
     .progress-bar-bg {
@@ -1285,7 +1298,7 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (z > 2 && a > 0) {
+        if (z > 1 && a > 0) {
           a = a - 0.5;
         }
 
@@ -1312,6 +1325,7 @@
         z = 0;
 
         if (dd === 1) {
+          a = a + 0.5;
           log("Waiting 7s (dd==1)…", "l-info");
           await sleep(7000);
           i = lc * 1;

@@ -1,0 +1,1730 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daisuki Bot — Daisuki2 Logic (Auto-Reconnect + Persistent)</title>
+  <style>
+    :root {
+      --bg: #0e1117;
+      --panel: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --accent: #2f81f7;
+      --win: #3fb950;
+      --loss: #f85149;
+      --muted: #8b949e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 16px;
+      margin: 0 0 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    input,
+    button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    input {
+      flex: 1;
+      min-width: 220px;
+    }
+
+    button {
+      cursor: pointer;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button.stop {
+      background: var(--loss);
+      border-color: var(--loss);
+    }
+
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width:900px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+      font-size: 13px;
+    }
+
+    .stat:last-child {
+      border-bottom: none;
+    }
+
+    .stat span:last-child {
+      font-weight: 700;
+    }
+
+    #log {
+      height: 520px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+
+    .l-win {
+      color: var(--win);
+    }
+
+    .l-loss {
+      color: var(--loss);
+    }
+
+    .l-info {
+      color: var(--muted);
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: .5px;
+    }
+
+    .pill.on {
+      background: var(--win);
+      color: #000;
+    }
+
+    .pill.off {
+      background: var(--loss);
+      color: #fff;
+    }
+
+    .pill.wait {
+      background: #d29922;
+      color: #000;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    /* ============================================================
+       Deriv DBot-style Report Center
+       ============================================================ */
+    .report-panel {
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+      min-height: 560px;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: rgba(22, 27, 34, 0.7);
+      padding: 0 12px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      border-radius: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      color: #ff444f;
+      border-bottom-color: #ff444f;
+      font-weight: 700;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(255, 68, 79, 0.15);
+      color: #ff444f;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      margin-left: 5px;
+    }
+
+    .tab-content {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      height: 100%;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    .tx-actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 7px 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: var(--muted);
+    }
+
+    .tx-table-header {
+      display: grid;
+      grid-template-columns: 80px 1fr 150px;
+      padding: 10px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .col-price {
+      text-align: right;
+    }
+
+    .tx-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 280px;
+      min-height: 190px;
+    }
+
+    .tx-row {
+      display: grid;
+      grid-template-columns: 80px 1fr 150px;
+      padding: 10px 16px;
+      font-size: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      align-items: center;
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .tx-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .tx-row.selected {
+      background: rgba(47, 129, 247, 0.12);
+      border-left: 3px solid var(--accent);
+    }
+
+    .tx-type {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tx-spots {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-family: inherit;
+    }
+
+    .spot-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .spot-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      border: 1.8px solid;
+      display: inline-block;
+      box-sizing: border-box;
+    }
+
+    .spot-dot.red {
+      border-color: #ff444f;
+    }
+
+    .spot-dot.gray {
+      border-color: #8b949e;
+    }
+
+    .tx-price-pl {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 2px;
+    }
+
+    .tx-stake {
+      font-size: 12px;
+      color: var(--text);
+    }
+
+    .tx-pl {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .tx-pl.win {
+      color: #00a79e;
+    }
+
+    .tx-pl.loss {
+      color: #ec3f3f;
+    }
+
+    .tx-summary-footer {
+      border-top: 1px solid var(--border);
+      background: rgba(22, 27, 34, 0.4);
+      padding: 16px;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px 16px;
+    }
+
+    .sum-box {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .sum-label {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .info-link {
+      font-size: 10px;
+      color: var(--muted);
+      text-decoration: underline;
+      cursor: help;
+    }
+
+    .sum-val {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .sum-val.win {
+      color: #00a79e;
+    }
+
+    .sum-val.loss {
+      color: #ec3f3f;
+    }
+
+    .btn-reset {
+      width: 100%;
+      margin-top: 14px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .2s;
+    }
+
+    .btn-reset:hover {
+      background: rgba(255, 68, 79, 0.1);
+      border-color: #ff444f;
+      color: #ff444f;
+    }
+
+    .journal-wrap {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .journal-actions {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    #log {
+      flex: 1;
+      height: 480px;
+      overflow-y: auto;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      padding: 10px;
+    }
+
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .overview-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ov-title {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .ov-value {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .ov-sub {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .progress-bar-bg {
+      height: 6px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: #00a79e;
+      border-radius: 3px;
+      transition: width .3s;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-overlay.hidden {
+      display: none;
+    }
+
+    .modal-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      width: 90%;
+      max-width: 440px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .modal-close-btn:hover {
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 16px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+    }
+
+    .detail-row:last-child {
+      border-bottom: none;
+    }
+
+    .detail-label {
+      color: var(--muted);
+    }
+
+    .detail-val {
+      font-weight: 700;
+    }
+
+    .detail-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .detail-badge.win {
+      background: rgba(0, 167, 158, 0.2);
+      color: #00a79e;
+    }
+
+    .detail-badge.loss {
+      background: rgba(236, 63, 63, 0.2);
+      color: #ec3f3f;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>
+    Daisuki Bot — Daisuki2 Logic
+    <span id="status" class="pill off">STOPPED</span>
+  </h1>
+
+  <div class="row">
+    <input id="token" type="password" placeholder="Deriv API token (read + trade, demo recommended)" />
+    <button id="start">Start</button>
+    <button id="stop" class="stop" disabled>Stop</button>
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="stat"><span>Login ID</span><span id="loginid">—</span></div>
+      <div class="stat"><span>Account ID</span><span id="accountid">—</span></div>
+      <div class="stat"><span>Currency</span><span id="currency">—</span></div>
+      <div class="stat"><span>Balance</span><span id="balance">—</span></div>
+      <div class="stat"><span>Total profit</span><span id="profit">0.00</span></div>
+      <div class="stat"><span>Stake</span><span id="s-stake">0.50</span></div>
+      <div class="stat"><span>b</span><span id="s-b">0.00</span></div>
+      <div class="stat"><span>maxp</span><span id="s-maxp">0.00</span></div>
+      <div class="stat"><span>lc</span><span id="s-lc">0.00</span></div>
+      <div class="stat"><span>a</span><span id="s-a">0.00</span></div>
+      <div class="stat"><span>dd</span><span id="s-dd">0</span></div>
+      <div class="stat"><span>z</span><span id="s-z">0</span></div>
+      <div class="stat"><span>g</span><span id="s-g">0</span></div>
+      <div class="stat"><span>c</span><span id="s-c">0.00</span></div>
+      <div class="stat"><span>i</span><span id="s-i">0.00</span></div>
+      <div class="stat"><span>Trades</span><span id="s-trades">0</span></div>
+      <div class="stat"><span>Wins / Losses</span><span id="s-wl">0 / 0</span></div>
+
+      <div class="hint">
+        Symbol: 1HZ10V · Contract: DIGITUNDER · Barrier: +7 · Duration: 1 tick<br />
+        Test on a <b>Demo</b> account first.<br />
+        <b>State persists</b> across stop / crash / page reload.<br />
+        <b>Auto-reconnects</b> on WebSocket drop.
+      </div>
+    </div>
+
+    <div class="panel report-panel">
+      <div class="tabs">
+        <button class="tab-btn" data-tab="summary">Summary</button>
+        <button class="tab-btn active" data-tab="transactions">Transactions <span id="tx-badge"
+            class="badge">0</span></button>
+        <button class="tab-btn" data-tab="journal">Journal</button>
+      </div>
+
+      <div id="tab-transactions" class="tab-content active">
+        <div class="tx-actions">
+          <button id="btn-download" class="btn-secondary">Download</button>
+          <button id="btn-view-detail" class="btn-secondary">View Detail</button>
+        </div>
+
+        <div class="tx-table-header">
+          <div class="col-type">Type</div>
+          <div class="col-spot">Entry spot</div>
+          <div class="col-price">Buy price and P/L</div>
+        </div>
+
+        <div id="tx-list" class="tx-list">
+          <div style="text-align:center; padding:50px 10px; color:var(--muted); font-size:12px;">No transactions yet.
+            Click Start to begin trading.</div>
+        </div>
+
+        <div class="tx-summary-footer">
+          <div class="summary-grid">
+            <div class="sum-box">
+              <div class="sum-label">Total stake</div>
+              <div id="sum-stake" class="sum-val">0.00 USD</div>
+            </div>
+            <div class="sum-box">
+              <div class="sum-label">Total payout</div>
+              <div id="sum-payout" class="sum-val">0.00 USD</div>
+            </div>
+            <div class="sum-box">
+              <div class="sum-label">
+                No. of runs
+                <span class="info-link" title="Total number of executed contracts">What's this?</span>
+              </div>
+              <div id="sum-runs" class="sum-val">0</div>
+            </div>
+            <div class="sum-box">
+              <div class="sum-label">Contracts lost</div>
+              <div id="sum-lost" class="sum-val">0</div>
+            </div>
+            <div class="sum-box">
+              <div class="sum-label">Contracts won</div>
+              <div id="sum-won" class="sum-val">0</div>
+            </div>
+            <div class="sum-box">
+              <div class="sum-label">Total profit/loss</div>
+              <div id="sum-pl" class="sum-val">+0.00 USD</div>
+            </div>
+          </div>
+          <button id="btn-reset" class="btn-reset">Reset</button>
+        </div>
+      </div>
+
+      <div id="tab-summary" class="tab-content">
+        <div class="summary-cards">
+          <div class="overview-card">
+            <div class="ov-title">Net Profit / Loss</div>
+            <div id="ov-profit" class="ov-value">+0.00 USD</div>
+            <div id="ov-roi" class="ov-sub">ROI: 0.00%</div>
+          </div>
+          <div class="overview-card">
+            <div class="ov-title">Win Rate</div>
+            <div id="ov-winrate" class="ov-value">0.0%</div>
+            <div class="progress-bar-bg">
+              <div id="ov-win-bar" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="overview-card">
+            <div class="ov-title">Runs Won / Lost</div>
+            <div id="ov-runs" class="ov-value">0 / 0</div>
+            <div id="ov-current-stake" class="ov-sub">Current Stake: 0.50 USD</div>
+          </div>
+          <div class="overview-card">
+            <div class="ov-title">Session Peak Profit (maxp)</div>
+            <div id="ov-maxp" class="ov-value">0.00 USD</div>
+            <div id="ov-b" class="ov-sub">Trailing Target (b): 0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-journal" class="tab-content">
+        <div class="journal-wrap">
+          <div class="journal-actions">
+            <button id="btn-clear-log" class="btn-secondary" style="padding:4px 10px; font-size:11px;">Clear
+              Log</button>
+          </div>
+          <div id="log"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="detail-modal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Transaction Detail</h3>
+          <button id="modal-close" class="modal-close-btn">&times;</button>
+        </div>
+        <div id="modal-body" class="modal-body">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ============================================================
+       Daisuki Bot — Daisuki2.xml logic
+       + Persistent state
+       + Auto-reconnect on WS drop
+       + Newest-first capped journal (500 entries)
+       ============================================================ */
+
+    const APP_ID = "34EA2IFO1VrIeHWq4SVH7";
+    const REST_BASE = "https://api.derivws.com";
+
+    const SYMBOL = "1HZ10V";
+    const CONTRACT_TYPE = "DIGITUNDER";
+    const PREDICTION = 7;
+    const DURATION = 1;
+    const DURATION_UNIT = "t";
+
+    const STORAGE_KEY = "daisuki_state_v1";
+    const MAX_LOG_ENTRIES = 500;
+
+    /* -------- State -------- */
+    let stake = 0.5;
+    let pre = 7;
+    let lc = 0;
+    let tp = 1000;
+    let maxp = 0;
+    let stoploss = 1000;
+    let dd = 0;
+    let a = 0;
+    let bn = 1000;
+    let b = 0;
+    let c = 0;
+    let z = 0;
+    let g = 0;
+    let x = 0;
+    let i = 0;
+
+    /* -------- Runtime -------- */
+    let ws = null;
+    let running = false;
+    let totalProfit = 0;
+    let trades = 0, wins = 0, losses = 0;
+    let currency = "USD";
+    let loginid = "";
+    let accountId = "";
+    let transactions = [];
+    let totalStake = 0;
+    let totalPayout = 0;
+    let selectedTx = null;
+    let wasResumed = false;
+
+    /* -------- Reconnect runtime -------- */
+    let savedToken = "";        // in-memory only
+    let reconnectAttempts = 0;
+    let reconnecting = false;
+    let loopGeneration = 0;
+
+    /* -------- DOM -------- */
+    const $ = (id) => document.getElementById(id);
+    const logEl = $("log");
+    const statusEl = $("status");
+
+    function log(msg, cls = "l-info") {
+      const t = new Date().toLocaleTimeString();
+      const entry = document.createElement("div");
+      entry.className = cls;
+      entry.textContent = `[${t}] ${msg}`;
+      logEl.prepend(entry);
+      while (logEl.childElementCount > MAX_LOG_ENTRIES) {
+        logEl.removeChild(logEl.lastElementChild);
+      }
+      logEl.scrollTop = 0;
+    }
+
+    function setStatus(text, cls) {
+      statusEl.textContent = text;
+      statusEl.className = "pill " + cls;
+    }
+
+    /* ============================================================
+       PERSISTENCE
+       ============================================================ */
+
+    function saveState() {
+      try {
+        const snapshot = {
+          stake, pre, lc, tp, maxp, stoploss, dd, a, bn, b, c, z, g, x, i,
+          totalProfit, trades, wins, losses,
+          totalStake, totalPayout,
+          currency, loginid, accountId,
+          transactions,
+          savedAt: new Date().toISOString()
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snapshot));
+      } catch (e) {
+        console.warn("saveState failed:", e);
+      }
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        const s = JSON.parse(raw);
+        if (!s || typeof s !== "object") return false;
+
+        if (typeof s.stake === "number") stake = s.stake;
+        if (typeof s.pre === "number") pre = s.pre;
+        if (typeof s.lc === "number") lc = s.lc;
+        if (typeof s.tp === "number") tp = s.tp;
+        if (typeof s.maxp === "number") maxp = s.maxp;
+        if (typeof s.stoploss === "number") stoploss = s.stoploss;
+        if (typeof s.dd === "number") dd = s.dd;
+        if (typeof s.a === "number") a = s.a;
+        if (typeof s.bn === "number") bn = s.bn;
+        if (typeof s.b === "number") b = s.b;
+        if (typeof s.c === "number") c = s.c;
+        if (typeof s.z === "number") z = s.z;
+        if (typeof s.g === "number") g = s.g;
+        if (typeof s.x === "number") x = s.x;
+        if (typeof s.i === "number") i = s.i;
+
+        if (typeof s.totalProfit === "number") totalProfit = s.totalProfit;
+        if (typeof s.trades === "number") trades = s.trades;
+        if (typeof s.wins === "number") wins = s.wins;
+        if (typeof s.losses === "number") losses = s.losses;
+        if (typeof s.totalStake === "number") totalStake = s.totalStake;
+        if (typeof s.totalPayout === "number") totalPayout = s.totalPayout;
+
+        if (typeof s.currency === "string" && s.currency) currency = s.currency;
+        if (typeof s.loginid === "string") loginid = s.loginid;
+        if (typeof s.accountId === "string") accountId = s.accountId;
+
+        if (Array.isArray(s.transactions)) {
+          transactions = s.transactions.map(t => ({
+            id: t.id,
+            time: t.time,
+            timestamp: t.timestamp,
+            symbol: t.symbol || SYMBOL,
+            contractType: t.contractType || CONTRACT_TYPE,
+            barrier: t.barrier,
+            stake: Number(t.stake) || 0,
+            payout: Number(t.payout) || 0,
+            profit: Number(t.profit) || 0,
+            won: !!t.won,
+            entrySpot: t.entrySpot,
+            a: typeof t.a === "number" ? t.a : 0,
+            currency: t.currency || currency
+          }));
+        }
+
+        wasResumed = true;
+        return true;
+      } catch (e) {
+        console.warn("loadState failed:", e);
+        return false;
+      }
+    }
+
+    function clearSavedState() {
+      try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+    }
+
+    function updateStats() {
+      $("profit").textContent = totalProfit.toFixed(2);
+      $("s-stake").textContent = stake.toFixed(2);
+      $("s-b").textContent = b.toFixed(2);
+      $("s-maxp").textContent = maxp.toFixed(2);
+      $("s-lc").textContent = lc.toFixed(2);
+      $("s-a").textContent = a.toFixed(2);
+      $("s-dd").textContent = dd;
+      $("s-z").textContent = z;
+      $("s-g").textContent = g;
+      $("s-c").textContent = c.toFixed(2);
+      $("s-i").textContent = i.toFixed(2);
+      $("s-trades").textContent = trades;
+      $("s-wl").textContent = `${wins} / ${losses}`;
+    }
+
+    /* ============================================================
+       REST: Accounts + OTP
+       ============================================================ */
+
+    async function getAccounts(token) {
+      const res = await fetch(`${REST_BASE}/trading/v1/options/accounts`, {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Deriv-App-ID": APP_ID,
+        }
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `Accounts fetch failed: ${res.status}`);
+      }
+      const data = await res.json();
+      return data.data || [];
+    }
+
+    async function getOtpUrl(token, accId) {
+      const res = await fetch(
+        `${REST_BASE}/trading/v1/options/accounts/${accId}/otp`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Deriv-App-ID": APP_ID,
+          }
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `OTP fetch failed: ${res.status}`);
+      }
+      const data = await res.json();
+      return data.data.url;
+    }
+
+    /* ============================================================
+       WebSocket plumbing
+       ============================================================ */
+
+    function connect(otpUrl) {
+      return new Promise((resolve, reject) => {
+        ws = new WebSocket(otpUrl);
+        ws.onopen = () => {
+          reconnectAttempts = 0;
+          resolve();
+        };
+        ws.onerror = () => reject(new Error("WebSocket connection failed"));
+        ws.onclose = () => {
+          if (running && !reconnecting) {
+            log("WebSocket closed unexpectedly. Reconnecting…", "l-loss");
+            handleUnexpectedClose();
+          }
+        };
+        ws.onmessage = (ev) => {
+          try { handleMessage(JSON.parse(ev.data)); }
+          catch (e) { log("Bad message: " + e.message, "l-loss"); }
+        };
+      });
+    }
+
+    const pending = {};
+
+    function send(payload) {
+      return new Promise((resolve, reject) => {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          return reject(new Error("WebSocket is not open"));
+        }
+        const req_id = Math.floor(Math.random() * 1e9);
+        pending[req_id] = { resolve, reject };
+        payload.req_id = req_id;
+        ws.send(JSON.stringify(payload));
+      });
+    }
+
+    let contractResolver = null;
+
+    function handleMessage(msg) {
+      if (msg.req_id && pending[msg.req_id]) {
+        const { resolve, reject } = pending[msg.req_id];
+        delete pending[msg.req_id];
+        if (msg.error) {
+          console.error("Deriv API error:", msg.error);
+          reject(new Error(msg.error.message || JSON.stringify(msg.error)));
+        } else {
+          resolve(msg);
+        }
+      }
+      if (msg.msg_type === "proposal_open_contract" && msg.proposal_open_contract) {
+        const c = msg.proposal_open_contract;
+        if (c.is_sold && contractResolver) {
+          const r = contractResolver;
+          contractResolver = null;
+          if (msg.subscription && msg.subscription.id) {
+            try { ws.send(JSON.stringify({ forget: msg.subscription.id })); } catch { }
+          }
+          r(c);
+        }
+      }
+    }
+
+    /* ============================================================
+       Auto-reconnect
+       ============================================================ */
+
+    async function handleUnexpectedClose() {
+      if (reconnecting) return;
+      reconnecting = true;
+
+      contractResolver = null;
+
+      // Reject any in-flight requests so callers don't hang forever
+      for (const id in pending) {
+        try { pending[id].reject(new Error("WebSocket closed")); } catch { }
+        delete pending[id];
+      }
+
+      reconnectAttempts++;
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 100000);
+      log(`Reconnect attempt #${reconnectAttempts} in ${(delay / 1000).toFixed(1)}s…`, "l-info");
+      await sleep(delay);
+
+      if (!running) { reconnecting = false; return; }
+
+      try {
+        setStatus("RECONNECTING", "wait");
+        const otpUrl = await getOtpUrl(savedToken, accountId);
+        await connect(otpUrl);
+        await fetchBalance();
+
+        setStatus("RUNNING", "on");
+        log("Reconnected successfully — resuming trading.", "l-win");
+
+        reconnecting = false;
+
+        // Bump generation so any old loop instance exits
+        loopGeneration++;
+        loop();
+      } catch (err) {
+        reconnecting = false;
+        log(`Reconnect failed: ${err.message}`, "l-loss");
+        if (running) handleUnexpectedClose();
+      }
+    }
+
+    /* ============================================================
+       Deriv API calls
+       ============================================================ */
+
+    async function fetchBalance() {
+      try {
+        const res = await send({ balance: 1 });
+        $("balance").textContent = Number(res.balance.balance).toFixed(2);
+      } catch { /* ignore */ }
+    }
+
+    async function forgetProposal(proposalId) {
+      if (proposalId) {
+        try { await send({ forget: proposalId }); } catch { /* ignore */ }
+      }
+      try { await send({ forget_all: "proposal" }); } catch { /* ignore */ }
+    }
+
+    async function buyDigitUnder(amount) {
+      const safeAmount = Math.round(Number(amount) * 100) / 100;
+      const finalAmount = Math.max(safeAmount, 0.35);
+
+      let pId = null;
+      try {
+        const proposal = await send({
+          proposal: 1,
+          subscribe: 1,
+          amount: Number(finalAmount.toFixed(2)),
+          basis: "stake",
+          contract_type: CONTRACT_TYPE,
+          currency: currency,
+          duration: DURATION,
+          duration_unit: DURATION_UNIT,
+          underlying_symbol: SYMBOL,
+          barrier: String(pre),
+        });
+
+        const p = proposal.proposal;
+        if (!p || !p.id) throw new Error("No proposal returned");
+        pId = p.id;
+
+        const buy = await send({ buy: p.id, price: p.ask_price || finalAmount });
+        return { contractId: buy.buy.contract_id, proposalId: p.id };
+      } catch (err) {
+        if (pId) {
+          try { await send({ forget: pId }); } catch { }
+        }
+
+        // If the proposal itself failed due to balance, don't bother trying direct buy
+        const msg = (err.message || "").toLowerCase();
+        if (msg.includes("insufficient") || msg.includes("balance is insufficient")) {
+          throw new Error("INSUFFICIENT_BALANCE: " + err.message);
+        }
+
+        try {
+          const directBuy = await send({
+            buy: 1,
+            price: Number(finalAmount.toFixed(2)),
+            parameters: {
+              amount: Number(finalAmount.toFixed(2)),
+              basis: "stake",
+              contract_type: CONTRACT_TYPE,
+              currency: currency,
+              duration: DURATION,
+              duration_unit: DURATION_UNIT,
+              underlying_symbol: SYMBOL,
+              barrier: String(pre),
+            }
+          });
+          return { contractId: directBuy.buy.contract_id, proposalId: null };
+        } catch (directErr) {
+          const dmsg = (directErr.message || "").toLowerCase();
+          if (dmsg.includes("insufficient") || dmsg.includes("balance is insufficient")) {
+            throw new Error("INSUFFICIENT_BALANCE: " + directErr.message);
+          }
+          throw err;
+        }
+      }
+    }
+
+    function watchContract(contractId) {
+      return new Promise((resolve) => {
+        contractResolver = resolve;
+        ws.send(JSON.stringify({
+          proposal_open_contract: 1,
+          contract_id: contractId,
+          subscribe: 1,
+        }));
+      });
+    }
+
+    async function diagnose() {
+      try {
+        const symbols = await send({ active_symbols: "brief" });
+        const all = symbols.active_symbols || [];
+        const target = all.find(s => s.underlying_symbol === SYMBOL);
+        log("Symbol " + SYMBOL + ": " + (target ? "FOUND" : "NOT FOUND"),
+          target ? "l-win" : "l-loss");
+
+        if (target) {
+          const cf = await send({ contracts_for: SYMBOL });
+          const available = (cf.contracts_for && cf.contracts_for.available) || [];
+          const types = [...new Set(available.map(c => c.contract_type))];
+          log("Available contract types: " + types.join(", "), "l-info");
+        }
+      } catch (e) {
+        log("Diagnostic error: " + e.message, "l-loss");
+      }
+    }
+
+    /* ============================================================
+       BEFORE PURCHASE
+       ============================================================ */
+
+    async function beforePurchase() {
+      b = b + 0.05;
+      maxp = maxp + 0.05;
+      updateStats();
+      saveState();
+
+      log(`Buying ${CONTRACT_TYPE} barrier=${PREDICTION} stake=${stake.toFixed(2)} | a=${a.toFixed(2)}`, "l-info");
+
+      const { contractId, proposalId } = await buyDigitUnder(stake);
+      const contract = await watchContract(contractId);
+
+      await forgetProposal(proposalId);
+
+      const profit = Number(contract.profit);
+      const won = profit > 0 || contract.status === "won" || contract.is_win === "1" || contract.is_win === 1 || contract.is_win === true;
+
+      totalProfit += profit;
+      trades++;
+      if (won) wins++; else losses++;
+
+      const buyPrice = Number(contract.buy_price || stake);
+      const payoutVal = won ? (Number(contract.payout) || (buyPrice + profit)) : 0;
+      totalStake += buyPrice;
+      totalPayout += payoutVal;
+
+      const entrySpot = contract.entry_tick || contract.entry_spot || contract.entry_tick_display_value || "-";
+
+      const tx = {
+        id: contractId,
+        time: new Date().toLocaleTimeString(),
+        timestamp: new Date().toISOString(),
+        symbol: SYMBOL,
+        contractType: CONTRACT_TYPE,
+        barrier: PREDICTION,
+        stake: buyPrice,
+        payout: payoutVal,
+        profit: profit,
+        won: won,
+        entrySpot: entrySpot,
+        a: a,
+        currency: currency || "USD"
+      };
+      transactions.unshift(tx);
+      selectedTx = tx;
+
+      renderTransactions();
+      renderSummaryTab();
+
+      await fetchBalance();
+      updateStats();
+      saveState();
+
+      const pSign = profit > 0 ? "+" : "";
+      log(
+        `#${contractId} → ${won ? "WIN" : "LOSS"} | profit=${pSign}${profit.toFixed(2)} | total=${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)} | a=${a.toFixed(2)}`,
+        won ? "l-win" : "l-loss"
+      );
+
+      return { won, profit };
+    }
+
+    /* ============================================================
+       AFTER PURCHASE
+       ============================================================ */
+
+    async function afterPurchase(result) {
+      if (totalProfit <= -stoploss) {
+        log("you loss!!!", "l-loss");
+        stopBot();
+        return;
+      }
+
+      if ((b - totalProfit) >= 50 && totalProfit >= tp) {
+        log("trailing stop", "l-info");
+        stopBot();
+        return;
+      }
+
+      if (totalProfit >= bn) {
+        log("yay", "l-win");
+        stopBot();
+        return;
+      }
+
+      if (result.won) {
+        lc = maxp - totalProfit;
+
+        if (lc < 2 && g > 0) {
+          maxp = maxp + c;
+          g = g - 1;
+          a = 1;
+          z = 0;
+        }
+
+        lc = maxp - totalProfit;
+        z = z + 1;
+
+        if (z > 1 && a > 0) {
+          a = a - 0.5;
+        }
+
+        dd = 0;
+
+        if (totalProfit >= b) {
+          maxp = totalProfit;
+          b = totalProfit;
+          x = 0;
+          c = 0;
+          i = 0;
+          stake = 0.5;
+        } else {
+          i = lc * 1;
+          if (i < 0.61) {
+            stake = 0.61;
+          } else {
+            stake = i;
+          }
+        }
+      } else {
+        lc = maxp - totalProfit;
+        dd = dd + 1;
+        z = 0;
+
+        if (dd === 1) {
+          a = a + 0.5;
+          log("Waiting 7s (dd==1)…", "l-info");
+          await sleep(7000);
+          i = lc * 1;
+        } else if (dd === 2) {
+          a = a + 1;
+          if (a >= 3) {
+            maxp = totalProfit;
+            c = (b - maxp) / 10;
+            g = 10;
+            a = 1;
+          }
+          i = 0.35;
+        } else {
+          i = 0.35;
+        }
+
+        if (i < 0.35) {
+          stake = 0.35;
+        } else {
+          stake = i;
+        }
+      }
+
+      updateStats();
+      saveState();
+
+      if (running) loop();
+    }
+
+    /* ============================================================
+       Main loop (with generation guard)
+       ============================================================ */
+
+    async function loop() {
+      if (!running) return;
+      const myGen = ++loopGeneration;
+      try {
+        const result = await beforePurchase();
+        if (!running || myGen !== loopGeneration) return;
+        await afterPurchase(result);
+
+      } catch (err) {
+        const msg = (err.message || "").toLowerCase();
+
+        if (msg.includes("insufficient_balance") ||
+          msg.includes("insufficient") ||
+          msg.includes("balance is insufficient")) {
+          log("Insufficient balance. Bot stopped.", "l-loss");
+          stopBot();
+          return;
+        }
+
+        log(`Error: ${err.message}`, "l-loss");
+        if (running && myGen === loopGeneration) {
+          log("Restarting in 2s (restartonerror=TRUE)…", "l-info");
+          await sleep(2000);
+          if (running && myGen === loopGeneration) loop();
+        }
+      }
+    }
+
+    /* ============================================================
+       Controls
+       ============================================================ */
+
+    function resetState() {
+      stake = 0.5; pre = 7; lc = 0; tp = 1000; maxp = 0;
+      stoploss = 1000; dd = 0; a = 0; bn = 1000; b = 0;
+      c = 0; z = 0; g = 0; x = 0; i = 0;
+      totalProfit = 0; trades = 0; wins = 0; losses = 0;
+      transactions = [];
+      totalStake = 0;
+      totalPayout = 0;
+      selectedTx = null;
+      wasResumed = false;
+      clearSavedState();
+      renderTransactions();
+      renderSummaryTab();
+      updateStats();
+    }
+
+    async function startBot() {
+      const token = $("token").value.trim();
+      if (!token) { alert("Enter your Deriv API token"); return; }
+      savedToken = token;
+
+      $("start").disabled = true;
+
+      try {
+        setStatus("FETCHING ACCOUNTS", "wait");
+        log("Fetching accounts…", "l-info");
+        const accounts = await getAccounts(token);
+        if (!accounts.length) throw new Error("No accounts found");
+
+        const demoAcc = accounts.find(ac => ac.account_type === "demo");
+        const chosen = demoAcc || accounts[0];
+
+        accountId = chosen.account_id || chosen.id || chosen.account;
+        loginid = chosen.loginid || chosen.account_id || chosen.id;
+        currency = chosen.currency || "USD";
+
+        if (!accountId) {
+          log("Account object: " + JSON.stringify(chosen), "l-loss");
+          throw new Error("Could not determine account_id");
+        }
+
+        $("loginid").textContent = loginid;
+        $("accountid").textContent = accountId;
+        $("currency").textContent = currency;
+        log(`Using account ${loginid} (${chosen.account_type || "?"})`, "l-win");
+
+        setStatus("FETCHING OTP", "wait");
+        log("Requesting OTP WebSocket URL…", "l-info");
+        const otpUrl = await getOtpUrl(token, accountId);
+
+        setStatus("CONNECTING", "wait");
+        log("Connecting to WebSocket…", "l-info");
+        await connect(otpUrl);
+
+        const resumed = loadState();
+        if (resumed) {
+          log(`Resumed saved state: trades=${trades}, wins=${wins}, losses=${losses}, totalProfit=${totalProfit.toFixed(2)}, stake=${stake.toFixed(2)}`, "l-win");
+        } else {
+          log("No saved state found — starting fresh.", "l-info");
+        }
+
+        running = true;
+        reconnecting = false;
+        reconnectAttempts = 0;
+
+        await fetchBalance();
+        await diagnose();
+
+        setStatus("RUNNING", "on");
+        $("stop").disabled = false;
+        log("Bot started — Daisuki2 logic active", "l-win");
+
+        renderTransactions();
+        renderSummaryTab();
+        updateStats();
+
+        loop();
+      } catch (err) {
+        log(`Start failed: ${err.message}`, "l-loss");
+        setStatus("STOPPED", "off");
+        $("start").disabled = false;
+        if (ws) { try { ws.close(); } catch { } ws = null; }
+      }
+    }
+
+    function stopBot() {
+      running = false;
+      reconnecting = false;
+      saveState();
+      setStatus("STOPPED", "off");
+      $("start").disabled = false;
+      $("stop").disabled = true;
+      log("Bot stopped. State saved.", "l-info");
+      if (ws) {
+        try {
+          if (contractResolver) contractResolver = null;
+          ws.close();
+        } catch { }
+        ws = null;
+      }
+    }
+
+    $("start").addEventListener("click", startBot);
+    $("stop").addEventListener("click", stopBot);
+
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    /* ============================================================
+       Transaction UI, Tabs & CSV Export
+       ============================================================ */
+
+    function renderTransactions() {
+      const listEl = $("tx-list");
+      const badgeEl = $("tx-badge");
+      if (badgeEl) badgeEl.textContent = transactions.length;
+
+      $("sum-stake").textContent = `${totalStake.toFixed(2)} ${currency}`;
+      $("sum-payout").textContent = `${totalPayout.toFixed(2)} ${currency}`;
+      $("sum-runs").textContent = transactions.length;
+      $("sum-lost").textContent = losses;
+      $("sum-won").textContent = wins;
+
+      const plEl = $("sum-pl");
+      plEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)} ${currency}`;
+      plEl.className = `sum-val ${totalProfit > 0 ? 'win' : totalProfit < 0 ? 'loss' : ''}`;
+
+      if (!transactions.length) {
+        listEl.innerHTML = `<div style="text-align:center; padding:50px 10px; color:var(--muted); font-size:12px;">No transactions yet. Click Start to begin trading.</div>`;
+        return;
+      }
+
+      listEl.innerHTML = transactions.map(t => {
+        const isSelected = selectedTx && selectedTx.id === t.id;
+        const plSign = t.profit >= 0 ? '+' : '';
+        const plCls = t.won ? 'win' : 'loss';
+        return `
+          <div class="tx-row ${isSelected ? 'selected' : ''}" onclick="selectTransaction(${t.id})">
+            <div class="tx-type">
+              <span class="symbol-icon" title="${t.symbol}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 14h3v6H4zM10 6h3v14h-3zM16 10h3v10h-3z" fill="#2f81f7" opacity="0.8"/>
+                  <path d="M5.5 10v4M11.5 2v4M17.5 6v4" stroke="#2f81f7" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+              </span>
+              <span class="contract-icon" title="${t.contractType}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 8h10M12 4l4 4-4 4" stroke="#f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+            </div>
+            <div class="tx-spots">
+              <div class="spot-item">
+                <span class="spot-dot red"></span>
+                <span>${t.entrySpot}</span>
+              </div>
+            </div>
+            <div class="tx-price-pl">
+              <div class="tx-stake">${t.stake.toFixed(2)} ${t.currency}</div>
+              <div class="tx-pl ${plCls}">${plSign}${t.profit.toFixed(2)} ${t.currency}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    window.selectTransaction = function (id) {
+      selectedTx = transactions.find(t => t.id === id) || null;
+      renderTransactions();
+    };
+
+    function renderSummaryTab() {
+      const profitEl = $("ov-profit");
+      if (profitEl) {
+        profitEl.textContent = `${totalProfit >= 0 ? '+' : ''}${totalProfit.toFixed(2)} ${currency}`;
+        profitEl.style.color = totalProfit > 0 ? '#00a79e' : totalProfit < 0 ? '#ec3f3f' : 'inherit';
+      }
+      const roi = totalStake > 0 ? ((totalProfit / totalStake) * 100).toFixed(2) : "0.00";
+      const roiEl = $("ov-roi");
+      if (roiEl) roiEl.textContent = `ROI: ${roi}%`;
+
+      const winRate = trades > 0 ? ((wins / trades) * 100).toFixed(1) : "0.0";
+      const winRateEl = $("ov-winrate");
+      if (winRateEl) winRateEl.textContent = `${winRate}%`;
+      const winBar = $("ov-win-bar");
+      if (winBar) winBar.style.width = `${winRate}%`;
+
+      const runsEl = $("ov-runs");
+      if (runsEl) runsEl.textContent = `${wins} / ${losses}`;
+      const curStakeEl = $("ov-current-stake");
+      if (curStakeEl) curStakeEl.textContent = `Current Stake: ${stake.toFixed(2)} ${currency}`;
+
+      const maxpEl = $("ov-maxp");
+      if (maxpEl) maxpEl.textContent = `${maxp.toFixed(2)} ${currency}`;
+      const bEl = $("ov-b");
+      if (bEl) bEl.textContent = `Trailing Target (b): ${b.toFixed(2)}`;
+    }
+
+    function downloadCSV() {
+      if (!transactions.length) {
+        alert("No transactions to download yet. Run the bot to generate trades first.");
+        return;
+      }
+
+      const headers = [
+        "Time",
+        "Stake",
+        "Profit/Loss",
+        "Payout",
+        "Entry Spot",
+        "a"
+      ];
+
+      const rows = transactions.map(t => [
+        `"${t.time}"`,
+        t.stake.toFixed(2),
+        t.profit.toFixed(2),
+        t.payout.toFixed(2),
+        `"${t.entrySpot}"`,
+        (typeof t.a === "number" ? t.a.toFixed(2) : "")
+      ]);
+
+      const csvContent =
+        "data:text/csv;charset=utf-8," +
+        [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      const dateStr = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `daisuki_trades_${dateStr}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      log(`Downloaded CSV log with ${transactions.length} trades.`, "l-win");
+    }
+
+    function viewDetail() {
+      const target = selectedTx || transactions[0];
+      if (!target) {
+        alert("No transaction available to view yet.");
+        return;
+      }
+      const modal = $("detail-modal");
+      const body = $("modal-body");
+      const roi = target.stake > 0 ? ((target.profit / target.stake) * 100).toFixed(2) : "0.00";
+
+      body.innerHTML = `
+        <div class="detail-row">
+          <span class="detail-label">Status</span>
+          <span class="detail-badge ${target.won ? 'win' : 'loss'}">${target.won ? 'WON' : 'LOST'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Contract ID</span>
+          <span class="detail-val">#${target.id}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Time</span>
+          <span class="detail-val">${target.time}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Market</span>
+          <span class="detail-val">${target.symbol} (Volatility 10 1s)</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Contract Type</span>
+          <span class="detail-val">${target.contractType} (Barrier ${target.barrier})</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Entry Spot</span>
+          <span class="detail-val"><span class="spot-dot red"></span> ${target.entrySpot}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Stake</span>
+          <span class="detail-val">${target.stake.toFixed(2)} ${target.currency}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Payout</span>
+          <span class="detail-val">${target.payout.toFixed(2)} ${target.currency}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Profit / Loss</span>
+          <span class="detail-val" style="color:${target.won ? '#00a79e' : '#ec3f3f'}">
+            ${target.profit >= 0 ? '+' : ''}${target.profit.toFixed(2)} ${target.currency} (${roi}%)
+          </span>
+        </div>
+      `;
+      modal.classList.remove("hidden");
+    }
+
+    function resetAll() {
+      if (running) {
+        if (!confirm("Bot is currently running. Do you want to stop and reset all session stats?")) {
+          return;
+        }
+        stopBot();
+      }
+      resetState();
+      log("Session and transactions reset (saved state cleared).", "l-info");
+    }
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+        btn.classList.add("active");
+        const tabId = "tab-" + btn.dataset.tab;
+        const targetTab = $(tabId);
+        if (targetTab) targetTab.classList.add("active");
+      });
+    });
+
+    $("btn-download").addEventListener("click", downloadCSV);
+    $("btn-view-detail").addEventListener("click", viewDetail);
+    $("btn-reset").addEventListener("click", resetAll);
+    $("modal-close").addEventListener("click", () => $("detail-modal").classList.add("hidden"));
+    $("detail-modal").addEventListener("click", (e) => {
+      if (e.target === $("detail-modal")) $("detail-modal").classList.add("hidden");
+    });
+    $("btn-clear-log").addEventListener("click", () => { $("log").innerHTML = ""; });
+
+    /* ============================================================
+       Auto-save on unload
+       ============================================================ */
+    window.addEventListener("beforeunload", () => {
+      saveState();
+    });
+
+    /* ============================================================
+       Boot
+       ============================================================ */
+    (function boot() {
+      const resumed = loadState();
+      renderTransactions();
+      renderSummaryTab();
+      updateStats();
+
+      if (resumed) {
+        $("loginid").textContent = loginid || "—";
+        $("accountid").textContent = accountId || "—";
+        $("currency").textContent = currency || "—";
+        log(`Previous session restored: trades=${trades}, wins=${wins}, losses=${losses}, totalProfit=${totalProfit.toFixed(2)}, stake=${stake.toFixed(2)}`, "l-win");
+        log("Press Start to resume with these values, or Reset to start fresh.", "l-info");
+      } else {
+        log("Ready. Paste your Deriv API token and press Start.", "l-info");
+      }
+    })();
+  </script>
+</body>
+
+</html>
