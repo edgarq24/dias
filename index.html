@@ -614,7 +614,7 @@
 <body>
 
   <h1>
-    Daisuki Bot — bahati nzuri
+    Daisuki Bot — Daisuki2 Logic
     <span id="status" class="pill off">STOPPED</span>
   </h1>
 
@@ -797,9 +797,6 @@
     let g = 0;
     let x = 0;
     let i = 0;
-    let c_div = 10;
-    let half_g = 0;
-
 
     /* -------- Runtime -------- */
     let ws = null;
@@ -851,7 +848,6 @@
       try {
         const snapshot = {
           stake, pre, lc, tp, maxp, stoploss, dd, a, bn, b, c, z, g, x, i,
-          c_div, half_g,
           totalProfit, trades, wins, losses,
           totalStake, totalPayout,
           currency, loginid, accountId,
@@ -886,8 +882,6 @@
         if (typeof s.g === "number") g = s.g;
         if (typeof s.x === "number") x = s.x;
         if (typeof s.i === "number") i = s.i;
-        if (typeof s.c_div === "number") c_div = s.c_div;
-        if (typeof s.half_g === "number") half_g = s.half_g;
 
         if (typeof s.totalProfit === "number") totalProfit = s.totalProfit;
         if (typeof s.trades === "number") trades = s.trades;
@@ -1066,7 +1060,7 @@
       }
 
       reconnectAttempts++;
-      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 500000);
+      const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 100000);
       log(`Reconnect attempt #${reconnectAttempts} in ${(delay / 1000).toFixed(1)}s…`, "l-info");
       await sleep(delay);
 
@@ -1295,13 +1289,6 @@
         lc = maxp - totalProfit;
 
         if (lc < 2 && g > 0) {
-          if (c_div > 14 && c < 6) {
-            c_div = c_div / 1.5;
-            maxp = totalProfit;
-            c = (b - maxp) / c_div;
-            g = c_div;
-            half_g = g * 0.5;
-          }
           maxp = maxp + c;
           g = g - 1;
           a = 1;
@@ -1311,7 +1298,7 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (a >= 0.25 && z > 0) {
+        if (z > 0 && a >= 0.25) {
           a = a - 0.25;
         }
 
@@ -1322,7 +1309,6 @@
           b = totalProfit;
           x = 0;
           c = 0;
-          a = 0;
           i = 0;
           stake = 0.5;
         } else {
@@ -1341,28 +1327,20 @@
         if (dd === 1) {
           a = a + 0.5;
           if (a >= 3) {
-            if (g > half_g) {
-              c_div = c_div * 1.5;
-            }
             maxp = totalProfit;
-            c = (b - maxp) / c_div;
-            g = c_div;
-            half_g = g * 0.5;
+            c = (b - maxp) / 10;
+            g = 10;
             a = 1;
           }
           log("Waiting 7s (dd==1)…", "l-info");
           await sleep(7000);
-          i = lc;
+          i = lc * 1;
         } else if (dd === 2) {
           a = a + 0.5;
           if (a >= 3) {
-            if (g > half_g) {
-              c_div = c_div * 1.5;
-            }
             maxp = totalProfit;
-            c = (b - maxp) / c_div;
-            g = c_div;
-            half_g = g * 0.5;
+            c = (b - maxp) / 10;
+            g = 10;
             a = 1;
           }
           i = 0.35;
@@ -1423,7 +1401,6 @@
       stake = 0.5; pre = 7; lc = 0; tp = 1000; maxp = 0;
       stoploss = 1000; dd = 0; a = 0; bn = 1000; b = 0;
       c = 0; z = 0; g = 0; x = 0; i = 0;
-      c_div = 10; half_g = 0;
       totalProfit = 0; trades = 0; wins = 0; losses = 0;
       transactions = [];
       totalStake = 0;
