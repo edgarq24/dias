@@ -1295,7 +1295,7 @@
       maxp = maxp + 0.05;
       if (result.won) {
         lc = maxp - totalProfit;
-        if (lc < 0.5 && g > 0) {
+        if (lc < 1 && g > 0) {
           maxp = maxp + c;
           g = g - 1;
         }
@@ -1318,7 +1318,7 @@
           if (z == 1) {
             i = lc * 1.2;
           } else {
-            i = 0.35;
+            i = 0.5;
           }
 
           if (i < 0.35) {
