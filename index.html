@@ -1247,7 +1247,7 @@
         g: g,        // NEW
         c: c,        // NEW
         b: b,        // NEW
-        maxp: maxp,  // NEW
+        lc: lc,      // NEW
         currency: currency || "USD"
       };
       transactions.unshift(tx);
@@ -1322,6 +1322,8 @@
         lc = maxp - totalProfit;
         dd = dd + 1;
         z = 0;
+        log("Waiting 13s (dd==1)…", "l-info");
+        await sleep(13000);
         stake = 0.35;
       }
 
@@ -1574,26 +1576,22 @@
         "Time",
         "Stake",
         "Profit/Loss",
-        "Payout",
-        "Entry Spot",
         "a",
         "g",
         "c",
         "b",
-        "maxp"
+        "lc"
       ];
 
       const rows = transactions.map(t => [
         `"${t.time}"`,
         t.stake.toFixed(2),
         t.profit.toFixed(2),
-        t.payout.toFixed(2),
-        `"${t.entrySpot}"`,
         (typeof t.a === "number" ? t.a.toFixed(2) : ""),
         (typeof t.g === "number" ? t.g.toFixed(2) : ""),
         (typeof t.c === "number" ? t.c.toFixed(2) : ""),
         (typeof t.b === "number" ? t.b.toFixed(2) : ""),
-        (typeof t.maxp === "number" ? t.maxp.toFixed(2) : "")
+        (typeof t.lc === "number" ? t.lc.toFixed(2) : "")
       ]);
 
       const csvContent =
