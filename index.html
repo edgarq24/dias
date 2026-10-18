@@ -1300,7 +1300,7 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if ((lc < 1 || q > 2) && g > 0) {
+        if ((lc < 1 || q > 3) && g > 0) {
           maxp = maxp + c;
           g = g - 1;
           q = 0;
@@ -1312,7 +1312,7 @@
 
         if (z == 2) {
           k = k + 1;
-          if (k > 2){
+          if (k > 2) {
             a = 0;
           }
           if (a > 0) {
@@ -1356,8 +1356,8 @@
             q = 0;
             k = 0;
           }
-          if (a > 3) {
-            maxp = maxp - (lc / 2);
+          if (a > 2) {
+            maxp = maxp - (lc / 1.8);
             c = (b - maxp) / 5;
             g = 5;
 
