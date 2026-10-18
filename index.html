@@ -797,6 +797,7 @@
     let g = 0;
     let x = 0;
     let i = 0;
+    let q = 0;
 
     /* -------- Runtime -------- */
     let ws = null;
@@ -1296,20 +1297,23 @@
       maxp = maxp + 0.05;
       if (result.won) {
         lc = maxp - totalProfit;
-        
-         if (lc < 1 && g > 0) {
-           maxp = maxp + c;
-           g = g - 1;
-         }
-         lc = maxp - totalProfit; 
-         
-
         z = z + 1;
-        
+
+        if ((lc < 1 || q > 2) && g > 0) {
+          maxp = maxp + c;
+          g = g - 1;
+          q = 0;
+        }
+        lc = maxp - totalProfit;
+
+
+
+
         if (z == 2) {
           a = 0;
+          q = q + 1;
         }
-       
+
         dd = 0;
 
         if (totalProfit >= b) {
@@ -1319,6 +1323,7 @@
           c = 0;
           i = 0;
           a = 0;
+          q = 0;
           stake = 0.5;
         } else {
           if (z == 1) {
@@ -1338,18 +1343,22 @@
         dd = dd + 1;
         if (z == 1) {
           a = a + 1;
-          if (a > 1) {
-            maxp = maxp - (lc / 2.5);
+          if (a = 2) {
+            q = 0;
+          }
+          if (a > 2) {
+            maxp = maxp - (lc / 1.5);
             c = (b - maxp) / 5;
             g = 5;
+
           }
-          
+
         }
         z = 0;
-        
+
         log("Waiting 7s (dd==1)…", "l-info");
         await sleep(7000);
-        
+
         stake = 0.35;
       }
 
