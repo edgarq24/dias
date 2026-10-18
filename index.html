@@ -798,6 +798,7 @@
     let x = 0;
     let i = 0;
     let q = 0;
+    let k = 0;
 
     /* -------- Runtime -------- */
     let ws = null;
@@ -1310,6 +1311,10 @@
 
 
         if (z == 2) {
+          k = k + 1;
+          if (k > 2){
+            a = 0;
+          }
           if (a > 0) {
             a = a - 1;
           }
@@ -1349,9 +1354,10 @@
           a = a + 1;
           if (a == 2) {
             q = 0;
+            k = 0;
           }
           if (a > 3) {
-            maxp = maxp - (lc / 1.5);
+            maxp = maxp - (lc / 2);
             c = (b - maxp) / 5;
             g = 5;
 
