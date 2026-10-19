@@ -1301,11 +1301,11 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if ((lc < 1 || q > 3) && g > 0) {
+        if ((lc < 2 || q > 3) && g > 0) {
           maxp = maxp + c;
           g = g - 1;
           q = 0;
-          a = 1;
+          a = 2;
         }
         lc = maxp - totalProfit;
 
@@ -1361,14 +1361,14 @@
           }
           if (a == 2) {
             q = 0;
-            
+
           }
           if (a > 2) {
             maxp = maxp - (lc / 1.75);
             c = (b - maxp) / 5;
             g = 5;
 
-          } 
+          }
 
         }
         z = 0;
