@@ -1356,10 +1356,13 @@
         lc = maxp - totalProfit;
         dd = dd + 1;
         if (z == 1) {
-          a = a + 1;
+          if (a < 3) {
+            a = a + 1;
+          }
           r = r + 1;
           if (r > 1) {
             k = 0;
+            r = 0;
           }
           if (a == 2) {
             q = 0;
