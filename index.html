@@ -1301,7 +1301,7 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if (lc < 0 && g > 0) {
+        if (lc <= 0 && g > 0) {
           maxp = maxp + c;
           g = g - 1;
           a = 3;
@@ -1327,7 +1327,7 @@
           stake = 0.5;
         } else {
           i = lc * 1.2;   
-          
+
           if (i < 0.35) {
             stake = 0.35;
           } else {
@@ -1347,9 +1347,9 @@
             if (a > 1) {
               log("Waiting 7s (dd==1)…", "l-info");
               await sleep(7000);
-              maxp = maxp - (lc / 1.5);
-              c = (b - maxp) / 7;
-              g = 7;
+              maxp = maxp - (lc / 2);
+              c = (b - maxp) / 5;
+              g = 5;
 
             }
             lc = maxp - totalProfit;
