@@ -1301,7 +1301,7 @@
         lc = maxp - totalProfit;
         z = z + 1;
 
-        if ((lc < 2 || q > 3) && g > 0) {
+        if ((lc < 2) && g > 0) {
           maxp = maxp + c;
           g = g - 1;
           q = 0;
@@ -1341,9 +1341,9 @@
           stake = 0.5;
         } else {
           if (z == 1) {
-            i = lc * 1.5;
+            i = lc * 1.2;
           } else {
-            i = 0.35;
+            i = lc * 1.2;
           }
 
           if (i < 0.35) {
@@ -1355,34 +1355,45 @@
       } else {
         lc = maxp - totalProfit;
         dd = dd + 1;
-        if (z == 1) {
-          if (a < 3) {
-            a = a + 1;
-          }
-          r = r + 1;
-          if (r > 1) {
-            k = 0;
-            r = 0;
-          }
-          if (a == 2) {
-            q = 0;
+        if (dd == 1) {
+          if (z <= 1) {
+            if (a < 3) {
+              a = a + 1;
+            }
+            r = r + 1;
+            if (r > 1) {
+              k = 0;
+              r = 0;
+            }
+            if (a == 2) {
+              q = 0;
 
-          }
-          if (a > 2) {
-            log("Waiting 17s (dd==1)…", "l-info");
-            await sleep(17000);
-            maxp = maxp - (lc / 1.75);
-            c = (b - maxp) / 5;
-            g = 5;
+            }
+            if (a > 1) {
+              log("Waiting 7s (dd==1)…", "l-info");
+              await sleep(7000);
+              maxp = maxp - (lc / 1.5);
+              c = (b - maxp) / 10;
+              g = 10;
 
+            }
+            lc = maxp - totalProfit;
+            i = lc * 1.2;
           }
 
+
+        } else {
+          i = 0.35;
         }
         z = 0;
 
 
 
-        stake = 0.35;
+        if (i < 0.35) {
+          stake = 0.35;
+        } else {
+          stake = i;
+        }
       }
 
       if (transactions.length > 0) {
