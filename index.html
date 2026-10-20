@@ -1356,6 +1356,8 @@
         lc = maxp - totalProfit;
         dd = dd + 1;
         if (dd == 1) {
+          log("Waiting 7s (dd==1)…", "l-info");
+              await sleep(7000);
           if (z <= 1) {
             if (a < 3) {
               a = a + 1;
