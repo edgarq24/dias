@@ -1308,7 +1308,7 @@
         }
         lc = maxp - totalProfit;
 
-        if (z == 2) {
+        if (z > 1) {
           if (a > 0) {
             a = a - 1;
           }
@@ -1326,7 +1326,7 @@
           q = 0;
           stake = 0.5;
         } else {
-          i = lc * 1.2;   
+          i = lc * 0.5;
 
           if (i < 0.35) {
             stake = 0.35;
@@ -1337,26 +1337,24 @@
       } else {
         lc = maxp - totalProfit;
         dd = dd + 1;
-        if (dd == 1) {
+        if (dd < 3) {
           log("Waiting 7s (dd==1)…", "l-info");
           await sleep(7000);
-          if (z <= 1) {
-            if (a < 3) {
-              a = a + 1;
-            }
-            if (a > 1) {
-              log("Waiting 7s (dd==1)…", "l-info");
-              await sleep(7000);
-              maxp = maxp - (lc / 2);
-              c = (b - maxp) / 5;
-              g = 5;
 
-            }
-            lc = maxp - totalProfit;
-            i = lc * 1.2;
+          if (a < 2) {
+            a = a + 1;
           }
+        }
+        if (a > 1) {
+          maxp = maxp - (lc * 0.5);
+          c = (b - maxp) / 10;
+          g = 10;
 
+        }
 
+        lc = maxp - totalProfit;
+        if (d == 1) {
+          i = lc * 0.5;
         } else {
           i = 0.35;
         }
