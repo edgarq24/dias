@@ -785,11 +785,11 @@
     let stake = 0.5;
     let pre = 7;
     let lc = 0;
-    let tp = 1000;
+    let tp = 100;
     let maxp = 0;
-    let stoploss = 1000;
+    let stoploss = 100;
     let dd = 0;
-    let a = 1.2;
+    let a = 0;
     let bn = 1000;
     let b = 0;
     let c = 0;
@@ -797,6 +797,9 @@
     let g = 0;
     let x = 0;
     let i = 0;
+    let q = 0;
+    let k = 0;
+    let r = 0;
 
     /* -------- Runtime -------- */
     let ws = null;
@@ -1296,19 +1299,21 @@
       maxp = maxp + 0.05;
       if (result.won) {
         lc = maxp - totalProfit;
-        /*
-         if (lc < 1 && g > 0) {
-           maxp = maxp + c;
-           g = g - 1;
-           a = 1;
-         }
-         lc = maxp - totalProfit; 
-         */
-
         z = z + 1;
-        if (z == 2) {
-          a = 2;
+
+        if (lc <= 0 && g > 0) {
+          maxp = maxp + c;
+          g = g - 1;
+          a = 3;
         }
+        lc = maxp - totalProfit;
+
+        if (z > 1) {
+          if (a > 0) {
+            a = a - 1;
+          }
+        }
+
         dd = 0;
 
         if (totalProfit >= b) {
@@ -1317,14 +1322,11 @@
           x = 0;
           c = 0;
           i = 0;
-          a = 2;
+          a = 0;
+          q = 0;
           stake = 0.5;
         } else {
-          if (z == 1) {
-            i = lc * a;
-          } else {
-            i = 0.35;
-          }
+          i = lc * 0.5;
 
           if (i < 0.35) {
             stake = 0.35;
@@ -1335,27 +1337,36 @@
       } else {
         lc = maxp - totalProfit;
         dd = dd + 1;
-        if (z == 1) {
-          if (a > 0.6) {
-            a = a - 0.2;
+        if (dd < 3) {
+          log("Waiting 7s (dd==1)…", "l-info");
+          await sleep(7000);
+
+          if (a < 2) {
+            a = a + 1;
           }
-          /*
-          if (a == 3) {
-             // maxp = maxp - lc/1.5;
-                        
-             c = (b - maxp) / 5;
-             g = 5;
-             a = 0;
-             
-           }
-             */
+        }
+        if (a > 1) {
+          maxp = maxp - (lc * 0.5);
+          c = (b - maxp) / 10;
+          g = 10;
+
+        }
+
+        lc = maxp - totalProfit;
+        if (d == 1) {
+          i = lc * 0.5;
+        } else {
+          i = 0.35;
         }
         z = 0;
-        /*
-        log("Waiting 13s (dd==1)…", "l-info");
-        await sleep(13000);
-        */
-        stake = 0.35;
+
+
+
+        if (i < 0.35) {
+          stake = 0.35;
+        } else {
+          stake = i;
+        }
       }
 
       if (transactions.length > 0) {
