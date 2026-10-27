@@ -1316,16 +1316,15 @@
           x = 0;
           c = 0;
           i = 0;
-          a = 2;
+          a = 0;
           stake = 0.5;
+
         } else {
-          /*if (z == 2) {
-            
+          if (z == 1) {
+            i = lc * 1;
           } else {
             i = 0.35;
-          }*/
-          i = lc * 1;
-
+          }
           if (i < 0.35) {
             stake = 0.35;
           } else {
@@ -1335,29 +1334,15 @@
       } else {
         lc = maxp - totalProfit;
         dd = dd + 1;
+        if (z == 1) { a = a + 1; }
+        if (a >= 3) {
+          maxp = totalProfit;
+          g = 5;
+          c = (b - maxp) / g;
+          //a = 1;
+        }
         z = 0;
-
-        if (dd === 1) {
-          log("Waiting 7s (dd==1)…", "l-info");
-          await sleep(7000);
-          i = lc * 1;
-        } else if (dd === 2) {
-          a = a + 1;
-          if (a >= 3) {
-            maxp = totalProfit;
-            c = (b - maxp) / 10;
-            g = 10;
-            a = 1;
-          }
-          i = 0.35;
-        } else {
-          i = 0.35;
-        }
-        if (i < 0.35) {
-          stake = 0.35;
-        } else {
-          stake = i;
-        }
+        stake = 0.35;
       }
 
       if (transactions.length > 0) {
